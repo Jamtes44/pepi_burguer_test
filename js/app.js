@@ -1,6 +1,9 @@
 import { renderCategories, renderProducts, renderCartDrawer } from './ui/renderService.js';
 import { subscribeToProducts, subscribeToStoreStatus } from './services/firebaseService.js';
-import { getCart, getCartTotals } from './services/cartService.js';
+import { getCart, getCartTotals, addToCart } from './services/cartService.js';
+
+// Variable en memoria para rastrear el producto actualmente abierto en el modal
+let currentProduct = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Renderizar la interfaz inicial
@@ -9,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. Conexión en vivo con Firestore: productos
   subscribeToProducts((products) => {
+    window.latestProductsList = products; // Guardar referencia global
     renderProducts(products);
   });
 
@@ -44,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const product = (window.latestProductsList || []).find(p => p.id === productId);
     if (!product) return;
 
+    currentProduct = product; // Guardar el producto en contexto
+
     document.getElementById('modal-product-category').textContent = product.category || 'Categoría';
     document.getElementById('modal-product-name').textContent = product.name;
     document.getElementById('modal-notes').value = '';
@@ -60,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <input type="radio" name="modal-presentation" value="Solo" checked class="text-brand-red focus:ring-brand-red">
               <span class="font-black text-xs">🍔 Solo / Individual</span>
             </div>
-            <span class="text-xs text-brand-dark font-black pl-5">$${product.priceSolo.toLocaleString('es-CO')}</span>
+            <span class="text-xs text-brand-dark font-black pl-5">$${parseInt(product.priceSolo, 10).toLocaleString('es-CO')}</span>
           </label>
 
           <label class="flex flex-col p-2.5 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/50 cursor-pointer">
@@ -68,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <input type="radio" name="modal-presentation" value="Combo" class="text-brand-red focus:ring-brand-red">
               <span class="font-black text-xs">🍟 En Combo (+Papas +Bebida)</span>
             </div>
-            <span class="text-xs text-brand-dark font-black pl-5">$${product.priceCombo.toLocaleString('es-CO')}</span>
+            <span class="text-xs text-brand-dark font-black pl-5">$${parseInt(product.priceCombo, 10).toLocaleString('es-CO')}</span>
           </label>
         `;
       }
@@ -76,13 +82,24 @@ document.addEventListener('DOMContentLoaded', () => {
       presSection?.classList.add('hidden');
     }
 
-    const priceDisplay = document.getElementById('modal-price-display');
-    if (priceDisplay) priceDisplay.textContent = `$${product.priceSolo.toLocaleString('es-CO')}`;
+    // Actualizar precio en pantalla inicial del modal
+    updateModalPriceDisplay();
+
+    // Escuchar cambios en la presentación o adicionales para recalcular el precio en tiempo real
+    document.querySelectorAll('input[name="modal-presentation"], input[name="modal-addons"]').forEach(element => {
+      element.addEventListener('change', updateModalPriceDisplay);
+    });
 
     document.getElementById('customize-modal')?.classList.remove('hidden');
   };
 
-  // 6. Cerrar Modal Personalizador
+  // 6. Confirmar y agregar el producto al carrito
+  const confirmAddBtn = document.getElementById('confirm-add-cart-btn');
+  if (confirmAddBtn) {
+    confirmAddBtn.addEventListener('click', handleConfirmAddToCart);
+  }
+
+  // 7. Cerrar Modal Personalizador
   const closeModalBtn = document.getElementById('close-modal-btn');
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', () => {
@@ -90,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 7. Envío del Pedido Estructurado hacia WhatsApp
+  // 8. Envío del Pedido Estructurado hacia WhatsApp
   const sendWhatsappBtn = document.getElementById('send-whatsapp-btn');
   if (sendWhatsappBtn) {
     sendWhatsappBtn.addEventListener('click', submitOrderViaWhatsApp);
@@ -106,8 +123,89 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Actualiza la vista de disponibilidad en la cabecera del cliente
+ * Recalcula el precio mostrado en el modal según la presentación y los adicionales seleccionados
  */
+function updateModalPriceDisplay() {
+  if (!currentProduct) return;
+
+  const selectedPresentation = document.querySelector('input[name="modal-presentation"]:checked')?.value || 'Solo';
+  const isCombo = selectedPresentation === 'Combo';
+  
+  const basePrice = isCombo && currentProduct.priceCombo 
+    ? parseInt(currentProduct.priceCombo, 10) 
+    : parseInt(currentProduct.priceSolo, 10);
+
+  let extraCost = 0;
+  document.querySelectorAll('input[name="modal-addons"]:checked').forEach(addon => {
+    extraCost += parseInt(addon.dataset.price || 0, 10);
+  });
+
+  const total = basePrice + extraCost;
+  const priceDisplay = document.getElementById('modal-price-display');
+  if (priceDisplay) {
+    priceDisplay.textContent = `$${total.toLocaleString('es-CO')}`;
+  }
+}
+
+/**
+ * Captura las opciones del modal e inserta el ítem en el cartService
+ */
+function handleConfirmAddToCart() {
+  if (!currentProduct) return;
+
+  const selectedPresentation = document.querySelector('input[name="modal-presentation"]:checked')?.value || 'Solo';
+  const isCombo = selectedPresentation === 'Combo';
+  
+  const basePrice = isCombo && currentProduct.priceCombo 
+    ? parseInt(currentProduct.priceCombo, 10) 
+    : parseInt(currentProduct.priceSolo, 10);
+
+  // Proteína
+  const selectedProtein = document.querySelector('input[name="modal-protein"]:checked')?.value || 'Carne Res';
+
+  // Vegetales
+  const selectedVeggies = Array.from(document.querySelectorAll('input[name="modal-veggies"]:checked'))
+    .map(chk => chk.value);
+
+  // Salsas
+  const selectedSauces = Array.from(document.querySelectorAll('input[name="modal-sauces"]:checked'))
+    .map(chk => chk.value);
+
+  // Adicionales
+  let extraCost = 0;
+  const selectedAdditionals = Array.from(document.querySelectorAll('input[name="modal-addons"]:checked'))
+    .map(chk => {
+      extraCost += parseInt(chk.dataset.price || 0, 10);
+      return chk.value;
+    });
+
+  // Notas opcionales
+  const notes = document.getElementById('modal-notes')?.value.trim() || '';
+
+  const unitPrice = basePrice + extraCost;
+
+  // Construcción del objeto para cartService
+  const itemToAdd = {
+    id: currentProduct.id,
+    name: currentProduct.name,
+    unitPrice: unitPrice,
+    isCombo: isCombo,
+    presentation: isCombo ? 'Combo (+Papas +Bebida)' : 'Solo / Individual',
+    protein: selectedProtein,
+    selectedVeggies: selectedVeggies,
+    selectedSauces: selectedSauces,
+    selectedAdditionals: selectedAdditionals,
+    notes: notes,
+    image: currentProduct.image
+  };
+
+  // Agregar al carrito mediante el servicio
+  addToCart(itemToAdd);
+
+  // Cerrar el modal
+  document.getElementById('customize-modal')?.classList.add('hidden');
+}
+
 /**
  * Actualiza la vista de disponibilidad en la cabecera y el carrito del cliente en tiempo real
  */
