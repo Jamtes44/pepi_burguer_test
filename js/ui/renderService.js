@@ -6,6 +6,9 @@ function formatCOP(amount) {
   return '$' + (amount || 0).toLocaleString('es-CO');
 }
 
+/**
+ * Renderiza las pestañas superiores de navegación por categorías
+ */
 export function renderCategories() {
   const navContainer = document.querySelector('nav[data-purpose="category-tabs"] > div');
   if (!navContainer) return;
@@ -42,22 +45,28 @@ export function renderCategories() {
   });
 }
 
+/**
+ * Renderiza las tarjetas dinámicas del catálogo de productos en el DOM
+ */
 export function renderProducts(productsList = []) {
   const catalog = document.getElementById('products-catalog');
   if (!catalog) return;
 
   window.latestProductsList = productsList;
 
+  // Filtrar solo productos activos (isAvailable !== false)
+  const availableProducts = productsList.filter(p => p.isAvailable !== false);
+
   const items = activeCategory === 'all' 
-    ? productsList 
-    : productsList.filter(p => (p.category || 'hamburguesas').toLowerCase() === activeCategory);
+    ? availableProducts 
+    : availableProducts.filter(p => (p.category || 'hamburguesas').toLowerCase() === activeCategory);
 
   catalog.innerHTML = '';
 
   if (items.length === 0) {
     catalog.innerHTML = `
       <div class="w-full text-center py-10 text-gray-400 text-xs italic font-medium">
-        No hay productos disponibles en esta categoría.
+        No hay productos disponibles en esta categoría por el momento.
       </div>
     `;
     return;
@@ -90,17 +99,20 @@ export function renderProducts(productsList = []) {
 
     // Formato de precios (Solo vs Combo)
     let priceHtml = '';
-    if (product.priceCombo) {
+    const priceSoloNum = parseInt(product.priceSolo, 10) || 0;
+    const priceComboNum = product.priceCombo ? parseInt(product.priceCombo, 10) : null;
+
+    if (priceComboNum) {
       priceHtml = `
         <div>
-          <span class="text-xs text-gray-500 font-medium block">Sola: <b class="text-brand-dark">${formatCOP(product.priceSolo)}</b></span>
-          <span class="text-xs font-black text-brand-red block">Combo: ${formatCOP(product.priceCombo)}</span>
+          <span class="text-xs text-gray-500 font-medium block">Sola: <b class="text-brand-dark">${formatCOP(priceSoloNum)}</b></span>
+          <span class="text-xs font-black text-brand-red block">Combo: ${formatCOP(priceComboNum)}</span>
         </div>
       `;
     } else {
       priceHtml = `
         <div>
-          <span class="text-sm font-black text-brand-red">${formatCOP(product.priceSolo)}</span>
+          <span class="text-sm font-black text-brand-red">${formatCOP(priceSoloNum)}</span>
         </div>
       `;
     }
@@ -126,7 +138,7 @@ export function renderProducts(productsList = []) {
     catalog.appendChild(card);
   });
 
-  // Vincular eventos dinámicos a los botones de la tarjeta
+  // Vincular eventos dinámicos para abrir el modal personalizador
   catalog.querySelectorAll('.btn-open-customizer').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const prodId = e.currentTarget.dataset.id;
@@ -135,30 +147,34 @@ export function renderProducts(productsList = []) {
   });
 }
 
+/**
+ * Renderiza el estado del carrito, badges superiores, resumen de totales y lista desplegable
+ */
 export function renderCartDrawer() {
   const cart = getCart();
-  const DELIVERY_FEE = 4000;
+  const { subtotal, deliveryFee, total } = getCartTotals();
 
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const grandTotal = totalCount > 0 ? (subtotal + DELIVERY_FEE) : 0;
 
+  // Elementos contadores y totales superiores / flotantes
   const badgeCount = document.getElementById('cart-badge-count');
   const floatCount = document.getElementById('float-cart-count');
   const floatTotal = document.getElementById('float-cart-total');
 
   if (badgeCount) badgeCount.textContent = totalCount;
   if (floatCount) floatCount.textContent = totalCount;
-  if (floatTotal) floatTotal.textContent = formatCOP(grandTotal);
+  if (floatTotal) floatTotal.textContent = formatCOP(total);
 
+  // Resumen del Drawer
   const summarySubtotal = document.getElementById('summary-subtotal');
   const summaryDelivery = document.getElementById('summary-delivery');
   const summaryTotal = document.getElementById('summary-total');
 
   if (summarySubtotal) summarySubtotal.textContent = formatCOP(subtotal);
-  if (summaryDelivery) summaryDelivery.textContent = totalCount > 0 ? formatCOP(DELIVERY_FEE) : '$0';
-  if (summaryTotal) summaryTotal.textContent = formatCOP(grandTotal);
+  if (summaryDelivery) summaryDelivery.textContent = totalCount > 0 ? formatCOP(deliveryFee) : '$0';
+  if (summaryTotal) summaryTotal.textContent = formatCOP(total);
 
+  // Barra flotante inferior
   const floatBar = document.getElementById('floating-cart-bar');
   if (floatBar) {
     if (totalCount > 0) {
@@ -169,6 +185,7 @@ export function renderCartDrawer() {
     }
   }
 
+  // Contenedor interno de ítems
   const container = document.getElementById('cart-items-container');
   if (!container) return;
 
@@ -178,48 +195,66 @@ export function renderCartDrawer() {
   }
 
   container.innerHTML = '';
-  cart.forEach((item, index) => {
+  cart.forEach((item) => {
     const itemEl = document.createElement('div');
     itemEl.className = "bg-brand-cream/60 border border-brand-orange/15 rounded-2xl p-3 flex flex-col gap-2";
 
+    // Unificación de precio unitario seguro
+    const unitPrice = parseInt(item.unitPrice || item.price || 0, 10);
+
+    // Detalles adicionales
     let metaDetails = [];
     if (item.presentation) metaDetails.push(`Pres: ${item.presentation}`);
     if (item.protein) metaDetails.push(`Prot: ${item.protein}`);
-    if (item.addons && item.addons.length > 0) metaDetails.push(`Extras: ${item.addons.join(', ')}`);
+    
+    const extrasList = item.selectedAdditionals || item.addons;
+    if (extrasList && extrasList.length > 0) {
+      metaDetails.push(`Extras: ${extrasList.join(', ')}`);
+    }
     if (item.notes) metaDetails.push(`Nota: "${item.notes}"`);
 
     itemEl.innerHTML = `
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between gap-2">
         <div>
           <h4 class="font-black text-xs text-brand-dark leading-tight">${item.name}</h4>
           <p class="text-[10px] text-gray-500 mt-0.5">${metaDetails.join(' • ')}</p>
         </div>
-        <button class="btn-cart-remove text-gray-400 hover:text-brand-red font-bold text-xs p-1" data-index="${index}">
+        <button class="btn-cart-remove text-gray-400 hover:text-brand-red font-bold text-xs p-1 shrink-0" data-cart-id="${item.cartItemId}">
           🗑️
         </button>
       </div>
 
       <div class="flex items-center justify-between pt-1 border-t border-brand-orange/10">
-        <span class="text-xs font-black text-brand-red">${formatCOP(item.price * item.quantity)}</span>
+        <span class="text-xs font-black text-brand-red">${formatCOP(unitPrice * item.quantity)}</span>
         <div class="flex items-center space-x-2 bg-white rounded-lg border border-gray-200 px-1 py-0.5">
-          <button class="btn-qty-minus w-5 h-5 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-100 rounded" data-index="${index}">-</button>
+          <button class="btn-qty-minus w-5 h-5 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-100 rounded" data-cart-id="${item.cartItemId}">-</button>
           <span class="text-xs font-black px-1">${item.quantity}</span>
-          <button class="btn-qty-plus w-5 h-5 flex items-center justify-center font-bold text-brand-red hover:bg-gray-100 rounded" data-index="${index}">+</button>
+          <button class="btn-qty-plus w-5 h-5 flex items-center justify-center font-bold text-brand-red hover:bg-gray-100 rounded" data-cart-id="${item.cartItemId}">+</button>
         </div>
       </div>
     `;
     container.appendChild(itemEl);
   });
 
+  // Vincular eventos de modificación con cartItemId
   container.querySelectorAll('.btn-qty-minus').forEach(btn => {
-    btn.addEventListener('click', (e) => updateQuantity(e.currentTarget.dataset.index, -1));
+    btn.addEventListener('click', (e) => {
+      const cartItemId = e.currentTarget.dataset.cartId;
+      updateQuantity(cartItemId, -1);
+    });
   });
 
   container.querySelectorAll('.btn-qty-plus').forEach(btn => {
-    btn.addEventListener('click', (e) => updateQuantity(e.currentTarget.dataset.index, 1));
+    btn.addEventListener('click', (e) => {
+      const cartItemId = e.currentTarget.dataset.cartId;
+      updateQuantity(cartItemId, 1);
+    });
   });
 
   container.querySelectorAll('.btn-cart-remove').forEach(btn => {
-    btn.addEventListener('click', (e) => removeFromCart(e.currentTarget.dataset.index));
+    btn.addEventListener('click', (e) => {
+      const cartItemId = e.currentTarget.dataset.cartId;
+      removeFromCart(cartItemId);
+    });
   });
 }
