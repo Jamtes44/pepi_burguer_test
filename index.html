@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>Pepi Burguer | Comidas Rápidas con Sabor Premium</title>
+  
+  <!-- Tailwind CSS CDN con plugins -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              red: '#D62300',
+              orange: '#F97316',
+              cheddar: '#F59E0B',
+              dark: '#1C1917',
+              cream: '#FFFBF5',
+              surface: '#FFFFFF',
+            }
+          },
+          fontFamily: {
+            sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          boxShadow: {
+            'soft': '0 8px 30px rgba(0, 0, 0, 0.06)',
+            'float': '0 12px 35px -4px rgba(214, 35, 0, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .ios-scroll { -webkit-overflow-scrolling: touch; }
+    .modal-backdrop {
+      background-color: rgba(28, 25, 23, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+
+<body class="bg-brand-cream text-brand-dark min-h-screen pb-28 md:pb-12 font-sans antialiased selection:bg-brand-orange selection:text-white">
+
+  <!-- Fixed Status Bar Top -->
+  <div id="store-status-pill" class="bg-amber-500/10 border-b border-brand-cheddar/20 py-1.5 px-4 text-center sticky top-0 z-50 backdrop-blur-md">
+    <p class="text-[11px] sm:text-xs font-medium text-amber-900 flex items-center justify-center gap-1.5">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+      <span class="font-bold text-emerald-700">Abierto hoy</span> • Domicilios rápidos &amp; calientes
+    </p>
+  </div>
+
+  <!-- Header Header Navbar -->
+  <header class="sticky top-[29px] z-40 bg-white/95 backdrop-blur-md border-b border-brand-orange/15 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      
+      <!-- Logo e Identidad -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-brand-red via-brand-orange to-brand-cheddar flex items-center justify-center shadow-md shadow-brand-red/20 text-xl sm:text-2xl">
+          🍔
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-2xl font-black tracking-tight text-brand-red uppercase leading-none">Pepi Burguer</h1>
+          <p class="text-[10px] sm:text-xs font-semibold text-brand-orange uppercase tracking-wider mt-0.5">Sabor Premium</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <a class="px-3 py-2 rounded-full bg-brand-cream border border-brand-orange/20 text-xs sm:text-sm font-bold text-brand-dark hover:bg-orange-50 transition flex items-center gap-1.5" href="tel:315334045">
+          <span>📞</span>
+          <span class="hidden sm:inline">315334045</span>
+        </a>
+
+        <button class="relative px-3.5 py-2 rounded-xl bg-brand-red text-white hover:bg-red-700 transition shadow-md shadow-brand-red/30 flex items-center justify-center gap-2 font-bold text-xs sm:text-sm" id="open-cart-btn">
+          <span>🛒</span>
+          <span class="hidden md:inline">Tu Pedido</span>
+          <span class="bg-brand-cheddar text-brand-dark font-black text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full border border-white" id="cart-badge-count">0</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Responsive Container -->
+  <div class="max-w-6xl mx-auto px-4 pt-4 sm:pt-6">
+    
+    <!-- Hero Banner -->
+    <section class="mb-6">
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-red via-brand-orange to-brand-cheddar p-5 sm:p-8 text-white shadow-xl shadow-brand-orange/25">
+        <div class="absolute -right-6 -bottom-8 text-7xl sm:text-9xl opacity-20 transform -rotate-12 pointer-events-none select-none">🍔</div>
+        <div class="absolute right-16 top-4 text-4xl sm:text-6xl opacity-20 pointer-events-none select-none">🔥</div>
+        
+        <div class="relative z-10 max-w-xl">
+          <span class="inline-block px-3 py-1 rounded-full bg-black/25 text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-200 backdrop-blur-sm mb-3">
+            100% Pan Artesanal &amp; Carne Grill
+          </span>
+          <h2 class="text-2xl sm:text-4xl font-black leading-tight drop-shadow-sm">
+            ¿Hambre con antojo de nivel superior?
+          </h2>
+          <p class="text-xs sm:text-base text-orange-100 mt-2 leading-relaxed font-medium">
+            Arma tu pedido personalizado con tus adicionales y salsas favoritas. ¡Recíbelo en tiempo récord!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navegación de Categorías (Pills Sticky Responsive) -->
+    <nav class="sticky top-[73px] z-30 bg-brand-cream/95 backdrop-blur-md py-3 border-b border-brand-orange/10 mb-6" data-purpose="category-tabs">
+      <div class="flex space-x-2 overflow-x-auto no-scrollbar ios-scroll">
+        <!-- Generado dinámicamente por JS -->
+      </div>
+    </nav>
+
+    <!-- Catálogo en Cuadrícula Adaptativa -->
+    <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6" id="products-catalog">
+      <!-- Tarjetas inyectadas dinámicamente desde Firestore por renderProducts() -->
+    </main>
+
+  </div>
+
+  <!-- Floating Cart Footer (Solo Móvil / Tablet) -->
+  <aside class="fixed bottom-0 left-0 right-0 z-30 p-3 pointer-events-none md:hidden transition duration-300 transform translate-y-full" id="floating-cart-bar">
+    <div class="max-w-md mx-auto pointer-events-auto">
+      <button class="w-full bg-brand-red text-white px-4 py-3.5 rounded-2xl shadow-float flex items-center justify-between active:scale-[0.98] transition" id="float-cart-btn">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-sm" id="float-cart-count">0</span>
+          <div class="text-left leading-tight">
+            <span class="text-xs uppercase font-bold text-orange-200 block tracking-wider">Tu Pedido</span>
+            <span class="text-xs text-white/90">Ver canasta y checkout</span>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-base font-black tracking-tight" id="float-cart-total">$0</span>
+          <span class="text-lg">🛒</span>
+        </div>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modal Personalizador de Productos -->
+  <div class="fixed inset-0 z-50 modal-backdrop hidden flex items-end sm:items-center justify-center p-0 sm:p-4" id="customize-modal">
+    <div class="bg-white w-full max-w-lg rounded-t-[32px] sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-brand-cream">
+        <div>
+          <span class="text-[10px] font-black uppercase text-brand-orange tracking-wider" id="modal-product-category">Categoría</span>
+          <h3 class="text-lg sm:text-xl font-black text-brand-dark" id="modal-product-name">Nombre del Producto</h3>
+        </div>
+        <button class="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold hover:bg-gray-300 transition-colors" id="close-modal-btn">✕</button>
+      </div>
+
+      <!-- Modal Content (Scrollable) -->
+      <div class="p-5 overflow-y-auto space-y-5 text-sm ios-scroll flex-1">
+        
+        <!-- Presentación -->
+        <div class="space-y-2" id="modal-section-presentation">
+          <label class="block text-xs font-bold text-gray-500 uppercase">1. Elige la Presentación</label>
+          <div class="grid grid-cols-2 gap-2" id="presentation-options-container"></div>
+        </div>
+
+        <!-- Proteína -->
+        <div class="space-y-2" id="modal-section-protein">
+          <label class="block text-xs font-bold text-gray-500 uppercase">2. Tipo de Proteína</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50 cursor-pointer transition-colors">
+              <input checked class="text-brand-red focus:ring-brand-red" name="modal-protein" type="radio" value="Carne Res"/>
+              <span class="font-bold text-xs">🥩 Carne Grill</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50 cursor-pointer transition-colors">
+              <input class="text-brand-red focus:ring-brand-red" name="modal-protein" type="radio" value="Pechuga de Pollo"/>
+              <span class="font-bold text-xs">🍗 Pollo</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Vegetales -->
+        <div class="space-y-2" id="modal-section-veggies">
+          <label class="block text-xs font-bold text-gray-500 uppercase">3. Vegetales y Acompañamientos</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex items-center space-x-1.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs cursor-pointer">
+              <input checked class="rounded text-brand-red focus:ring-brand-red" name="modal-veggies" type="checkbox" value="Lechuga Fresca"/>
+              <span>Lechuga</span>
+            </label>
+            <label class="flex items-center space-x-1.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs cursor-pointer">
+              <input checked class="rounded text-brand-red focus:ring-brand-red" name="modal-veggies" type="checkbox" value="Cebolla Morada"/>
+              <span>Cebolla</span>
+            </label>
+            <label class="flex items-center space-x-1.5 p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs cursor-pointer">
+              <input checked class="rounded text-brand-red focus:ring-brand-red" name="modal-veggies" type="checkbox" value="Maíz Tierno"/>
+              <span>Maíz</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Salsas -->
+        <div class="space-y-2" id="modal-section-sauces">
+          <div class="flex justify-between items-center">
+            <label class="block text-xs font-bold text-gray-500 uppercase">4. Salsas de la Casa</label>
+            <span class="text-[10px] text-brand-orange font-bold">¡Todas incluidas!</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-orange-50/50 border border-orange-100 cursor-pointer">
+              <input checked class="rounded text-brand-orange focus:ring-brand-orange" name="modal-sauces" type="checkbox" value="Tártara Especial"/>
+              <span>Tártara Especial</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-orange-50/50 border border-orange-100 cursor-pointer">
+              <input checked class="rounded text-brand-orange focus:ring-brand-orange" name="modal-sauces" type="checkbox" value="Piña Melada"/>
+              <span>Piña Melada</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-orange-50/50 border border-orange-100 cursor-pointer">
+              <input class="rounded text-brand-orange focus:ring-brand-orange" name="modal-sauces" type="checkbox" value="BBQ Ahumada"/>
+              <span>BBQ Ahumada</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2.5 rounded-lg bg-orange-50/50 border border-orange-100 cursor-pointer">
+              <input checked class="rounded text-brand-orange focus:ring-brand-orange" name="modal-sauces" type="checkbox" value="Crema de Maíz"/>
+              <span>Crema de Maíz</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Adicionales Extras -->
+        <div class="space-y-2" id="modal-section-addons">
+          <label class="block text-xs font-bold text-gray-500 uppercase">5. ¿Deseas Adicionales Extra?</label>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 hover:border-brand-cheddar bg-white cursor-pointer">
+              <span class="flex items-center space-x-2">
+                <input class="rounded text-brand-red focus:ring-brand-red" data-price="3000" name="modal-addons" type="checkbox" value="Tocineta Ahumada"/>
+                <span class="font-medium text-xs">🥓 Tocineta Ahumada</span>
+              </span>
+              <span class="text-xs font-black text-brand-dark">+$3.000</span>
+            </label>
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 hover:border-brand-cheddar bg-white cursor-pointer">
+              <span class="flex items-center space-x-2">
+                <input class="rounded text-brand-red focus:ring-brand-red" data-price="3000" name="modal-addons" type="checkbox" value="Queso Cheddar"/>
+                <span class="font-medium text-xs">🧀 Queso Cheddar</span>
+              </span>
+              <span class="text-xs font-black text-brand-dark">+$3.000</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Notas -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-gray-500 uppercase">Instrucciones Especiales</label>
+          <textarea class="w-full text-xs rounded-xl border-gray-200 focus:border-brand-red focus:ring-brand-red p-2.5" id="modal-notes" placeholder="Ej: Sin cebolla, pan bien dorado..." rows="2"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-gray-400 block">Total a pagar</span>
+          <span class="text-xl font-black text-brand-red" id="modal-price-display">$0</span>
+        </div>
+        <button class="flex-1 bg-brand-red text-white py-3 px-4 rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-md shadow-brand-red/30 active:scale-95 transition" id="confirm-add-cart-btn">
+          Agregar al Pedido
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sliding Drawer Carrito de Compras -->
+  <div class="fixed inset-0 z-50 modal-backdrop hidden transition-opacity duration-300" id="cart-drawer-backdrop"></div>
+  <aside class="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col" id="cart-drawer">
+    
+    <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-brand-cream">
+      <div class="flex items-center space-x-2">
+        <span class="text-xl">🛒</span>
+        <h2 class="text-lg font-black text-brand-dark">Tu Canasta</h2>
+      </div>
+      <button class="p-2 text-gray-400 hover:text-brand-dark text-lg font-bold" id="close-cart-btn">✕</button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-6 ios-scroll">
+      <div>
+        <h3 class="text-xs font-black uppercase tracking-wider text-gray-400 mb-2">Productos Seleccionados</h3>
+        <div class="space-y-3" id="cart-items-container"></div>
+      </div>
+
+      <div class="bg-brand-cream p-3.5 rounded-2xl border border-brand-orange/15 space-y-2 text-xs">
+        <div class="flex justify-between text-gray-600">
+          <span>Subtotal</span>
+          <span class="font-bold text-brand-dark" id="summary-subtotal">$0</span>
+        </div>
+        <div class="flex justify-between text-gray-600">
+          <span>Servicio a Domicilio</span>
+          <span class="font-bold text-brand-dark" id="summary-delivery">$4.000</span>
+        </div>
+        <div class="border-t border-brand-orange/20 pt-2 flex justify-between items-center text-sm font-black text-brand-red">
+          <span>Total a Pagar</span>
+          <span class="text-base font-black" id="summary-total">$0</span>
+        </div>
+      </div>
+
+      <!-- Checkout Form -->
+      <div class="border-t border-gray-100 pt-4 space-y-3">
+        <h3 class="text-xs font-black uppercase tracking-wider text-brand-red">Datos para Entrega Inmediata</h3>
+        <div class="space-y-2.5 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Nombre y Apellido *</label>
+            <input class="w-full rounded-xl border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-name" placeholder="Ej: Camilo Andrés Martínez" required type="text"/>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">WhatsApp / Teléfono *</label>
+            <input class="w-full rounded-xl border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-phone" placeholder="Ej: 3151234567" required type="tel"/>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Dirección / Conjunto Residencial *</label>
+            <input class="w-full rounded-xl border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-address" placeholder="Ej: Calle 45 # 12-30" required type="text"/>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-bold text-gray-600 mb-1">Torre / Bloque</label>
+              <input class="w-full rounded-xl border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-tower" placeholder="Ej: Torre 4" type="text"/>
+            </div>
+            <div>
+              <label class="block font-bold text-gray-600 mb-1">Apto / Casa</label>
+              <input class="w-full rounded-xl border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-apartment" placeholder="Ej: Apto 502" type="text"/>
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Forma de Pago</label>
+            <select class="w-full rounded-xl border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red bg-white font-medium" id="order-payment">
+              <option value="Efectivo contraentrega">💵 Efectivo al recibir</option>
+              <option value="Transferencia Nequi">🟣 Nequi</option>
+              <option value="Transferencia Daviplata">🔴 Daviplata</option>
+              <option value="Llave de BRe-B">🔑 Llave de BRe-B</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-gray-200 bg-white">
+      <button class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 text-sm uppercase tracking-wide active:scale-[0.98] transition" id="send-whatsapp-btn">
+        <span>📲 Confirmar Pedido por WhatsApp</span>
+      </button>
+    </div>
+  </aside>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

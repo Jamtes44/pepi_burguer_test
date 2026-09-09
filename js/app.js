@@ -1,0 +1,204 @@
+import { renderCategories, renderProducts, renderCartDrawer } from './ui/renderService.js';
+import { subscribeToProducts, subscribeToStoreStatus } from './services/firebaseService.js';
+import { getCart, getCartTotals } from './services/cartService.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Renderizar la interfaz inicial
+  renderCategories();
+  renderCartDrawer();
+
+  // 2. Conexión en vivo con Firestore: productos
+  subscribeToProducts((products) => {
+    renderProducts(products);
+  });
+
+  // 3. Conexión en vivo con Firestore: estado operativo de la tienda
+  subscribeToStoreStatus((isOpen) => {
+    updateClientStoreStatusUI(isOpen);
+  });
+
+  // 4. Controles del Carrito Desplegable (Drawer)
+  const cartDrawer = document.getElementById('cart-drawer');
+  const cartBackdrop = document.getElementById('cart-drawer-backdrop');
+  const openCartBtn = document.getElementById('open-cart-btn');
+  const floatCartBtn = document.getElementById('float-cart-btn');
+  const closeCartBtn = document.getElementById('close-cart-btn');
+
+  const toggleCart = (show) => {
+    if (show) {
+      cartBackdrop?.classList.remove('hidden');
+      cartDrawer?.classList.remove('translate-x-full');
+    } else {
+      cartBackdrop?.classList.add('hidden');
+      cartDrawer?.classList.add('translate-x-full');
+    }
+  };
+
+  if (openCartBtn) openCartBtn.addEventListener('click', () => toggleCart(true));
+  if (floatCartBtn) floatCartBtn.addEventListener('click', () => toggleCart(true));
+  if (closeCartBtn) closeCartBtn.addEventListener('click', () => toggleCart(false));
+  if (cartBackdrop) cartBackdrop.addEventListener('click', () => toggleCart(false));
+
+  // 5. Método global para abrir el Modal Personalizador desde cada producto
+  window.openCustomizer = (productId) => {
+    const product = (window.latestProductsList || []).find(p => p.id === productId);
+    if (!product) return;
+
+    document.getElementById('modal-product-category').textContent = product.category || 'Categoría';
+    document.getElementById('modal-product-name').textContent = product.name;
+    document.getElementById('modal-notes').value = '';
+
+    const presContainer = document.getElementById('presentation-options-container');
+    const presSection = document.getElementById('modal-section-presentation');
+
+    if (product.priceCombo) {
+      presSection?.classList.remove('hidden');
+      if (presContainer) {
+        presContainer.innerHTML = `
+          <label class="flex flex-col p-2.5 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/50 cursor-pointer">
+            <div class="flex items-center gap-1.5 mb-1">
+              <input type="radio" name="modal-presentation" value="Solo" checked class="text-brand-red focus:ring-brand-red">
+              <span class="font-black text-xs">🍔 Solo / Individual</span>
+            </div>
+            <span class="text-xs text-brand-dark font-black pl-5">$${product.priceSolo.toLocaleString('es-CO')}</span>
+          </label>
+
+          <label class="flex flex-col p-2.5 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/50 cursor-pointer">
+            <div class="flex items-center gap-1.5 mb-1">
+              <input type="radio" name="modal-presentation" value="Combo" class="text-brand-red focus:ring-brand-red">
+              <span class="font-black text-xs">🍟 En Combo (+Papas +Bebida)</span>
+            </div>
+            <span class="text-xs text-brand-dark font-black pl-5">$${product.priceCombo.toLocaleString('es-CO')}</span>
+          </label>
+        `;
+      }
+    } else {
+      presSection?.classList.add('hidden');
+    }
+
+    const priceDisplay = document.getElementById('modal-price-display');
+    if (priceDisplay) priceDisplay.textContent = `$${product.priceSolo.toLocaleString('es-CO')}`;
+
+    document.getElementById('customize-modal')?.classList.remove('hidden');
+  };
+
+  // 6. Cerrar Modal Personalizador
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+      document.getElementById('customize-modal')?.classList.add('hidden');
+    });
+  }
+
+  // 7. Envío del Pedido Estructurado hacia WhatsApp
+  const sendWhatsappBtn = document.getElementById('send-whatsapp-btn');
+  if (sendWhatsappBtn) {
+    sendWhatsappBtn.addEventListener('click', submitOrderViaWhatsApp);
+  }
+
+  // Tecla Escape para cerrar modales
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      toggleCart(false);
+      document.getElementById('customize-modal')?.classList.add('hidden');
+    }
+  });
+});
+
+/**
+ * Actualiza la vista de disponibilidad en la cabecera del cliente
+ */
+/**
+ * Actualiza la vista de disponibilidad en la cabecera y el carrito del cliente en tiempo real
+ */
+function updateClientStoreStatusUI(isOpen) {
+  const statusContainer = document.getElementById('store-status-pill');
+  const sendOrderBtn = document.getElementById('send-whatsapp-btn');
+
+  if (statusContainer) {
+    if (isOpen) {
+      statusContainer.className = "bg-amber-500/10 border-t border-brand-cheddar/20 py-1 px-4 text-center";
+      statusContainer.innerHTML = `
+        <p class="text-[11px] font-medium text-amber-900 flex items-center justify-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="font-bold text-emerald-700">Abierto hoy</span> • Domicilios rápidos &amp; calientes
+        </p>
+      `;
+    } else {
+      statusContainer.className = "bg-red-500/10 border-t border-red-500/20 py-1 px-4 text-center";
+      statusContainer.innerHTML = `
+        <p class="text-[11px] font-medium text-red-900 flex items-center justify-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-red-500"></span>
+          <span class="font-bold text-red-600">Cerrado por hoy</span> • No estamos recibiendo pedidos en este momento
+        </p>
+      `;
+    }
+  }
+
+  if (sendOrderBtn) {
+    if (isOpen) {
+      sendOrderBtn.disabled = false;
+      sendOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+      sendOrderBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+      sendOrderBtn.innerHTML = `<span>📲 Confirmar Pedido por WhatsApp</span>`;
+    } else {
+      sendOrderBtn.disabled = true;
+      sendOrderBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      sendOrderBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+      sendOrderBtn.innerHTML = `<span>🔒 Local Cerrado Temporalmente</span>`;
+    }
+  }
+}
+
+/**
+ * Procesa la orden y genera el mensaje de WhatsApp
+ */
+function submitOrderViaWhatsApp() {
+  const cart = getCart();
+  if (cart.length === 0) {
+    alert("Por favor selecciona algún producto antes de confirmar tu pedido.");
+    return;
+  }
+
+  const name = document.getElementById('order-name')?.value.trim();
+  const phone = document.getElementById('order-phone')?.value.trim();
+  const address = document.getElementById('order-address')?.value.trim();
+  const tower = document.getElementById('order-tower')?.value.trim();
+  const apartment = document.getElementById('order-apartment')?.value.trim();
+  const payment = document.getElementById('order-payment')?.value;
+
+  if (!name || !phone || !address) {
+    alert("Por favor completa los campos obligatorios: Nombre, Teléfono y Dirección.");
+    return;
+  }
+
+  const { subtotal, deliveryFee, total } = getCartTotals();
+
+  let msg = `¡Hola *Pepi Burguer*! 👋 Quiero confirmar este pedido con Sabor Premium:\n\n`;
+  msg += `👤 *Cliente:* ${name}\n`;
+  msg += `📞 *Tel:* ${phone}\n`;
+  msg += `📍 *Dirección:* ${address}\n`;
+  if (tower) msg += `🏢 *Torre:* ${tower}\n`;
+  if (apartment) msg += `🚪 *Apto/Interior:* ${apartment}\n`;
+  msg += `💳 *Método de Pago:* ${payment}\n\n`;
+
+  msg += `🛒 *DETALLE DEL PEDIDO:*\n`;
+  cart.forEach((item, idx) => {
+    msg += `\n*${idx + 1}. ${item.name}* (x${item.quantity})\n`;
+    if (item.presentation) msg += `   - Presentación: ${item.presentation}\n`;
+    if (item.protein) msg += `   - Proteína: ${item.protein}\n`;
+    if (item.selectedAdditionals?.length > 0) msg += `   - Extras: ${item.selectedAdditionals.join(', ')}\n`;
+    if (item.notes) msg += `   - Nota: _${item.notes}_\n`;
+    msg += `   - Subtotal: $${(item.unitPrice * item.quantity).toLocaleString('es-CO')}\n`;
+  });
+
+  msg += `\n-----------------------------\n`;
+  msg += `🧾 *Subtotal:* $${subtotal.toLocaleString('es-CO')}\n`;
+  msg += `🛵 *Domicilio:* $${deliveryFee.toLocaleString('es-CO')}\n`;
+  msg += `💰 *TOTAL A PAGAR:* $${total.toLocaleString('es-CO')}\n`;
+  msg += `-----------------------------\n`;
+  msg += `¿Me confirman el tiempo estimado de entrega por favor? ¡Muchas gracias! 🙌`;
+
+  const waUrl = `https://wa.me/57315334045?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
+}

@@ -1,0 +1,48 @@
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #1C1917;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #332E2B;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #F25C05;
+  }
+  
+  /* Utility to hide scrollbars on horizontal category navigation */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Custom checkbox & radio inputs styling for dark theme */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: #F25C05;
+  }
+  
+  /* Custom Modal Scroll Area Fixes */
+  #modal-body {
+    scrollbar-gutter: stable;
+  }
+  
+  /* Focus styles for interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid #F29F05;
+    outline-offset: 2px;
+  }
