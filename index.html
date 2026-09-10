@@ -44,7 +44,7 @@
 
 <body class="bg-brand-cream text-brand-dark min-h-screen pb-24 antialiased selection:bg-brand-orange selection:text-white">
 
-  <!-- Header Superior 100% Ancho Adaptativo -->
+  <!-- Header Superior -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-brand-orange/15 shadow-sm">
     <div class="w-full max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
       <div class="flex items-center space-x-3">
@@ -58,18 +58,17 @@
       </div>
 
       <div class="flex items-center space-x-2 shrink-0">
-        <a class="px-3 py-2 rounded-full bg-brand-cream border border-brand-orange/20 text-xs font-bold text-brand-dark hover:bg-orange-50 transition flex items-center gap-1.5" href="tel:315334045">
+        <a class="px-3 py-2 rounded-full bg-brand-cream border border-brand-orange/20 text-xs font-bold text-brand-dark hover:bg-orange-50 transition flex items-center gap-1.5" href="tel:3153340450">
           <span>📞</span>
-          <span class="hidden sm:inline">315 334 045</span>
+          <span class="hidden sm:inline">315 334 0450</span>
         </a>
-        <button class="relative p-2.5 rounded-2xl bg-brand-red text-white hover:bg-red-700 transition shadow-md shadow-brand-red/30 flex items-center justify-center active:scale-95" id="open-cart-btn">
+        <button class="relative p-2.5 rounded-2xl bg-brand-red text-white hover:bg-red-700 transition shadow-md shadow-brand-red/30 flex items-center justify-center active:scale-95" id="open-cart-btn" aria-label="Abrir carrito">
           <span class="text-lg">🛒</span>
           <span class="absolute -top-1.5 -right-1.5 bg-brand-cheddar text-brand-dark font-black text-[11px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm" id="cart-badge-count">0</span>
         </button>
       </div>
     </div>
 
-    <!-- Indicador Estado Tienda -->
     <div id="store-status-pill" class="bg-amber-500/10 border-t border-brand-cheddar/20 py-1.5 px-4 text-center">
       <p class="text-xs font-medium text-amber-900 flex items-center justify-center gap-1.5" id="store-status-text-pill">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
@@ -78,7 +77,7 @@
     </div>
   </header>
 
-  <!-- Banner Hero (Adapta altura en móvil y escritorio) -->
+  <!-- Banner Hero Promocional -->
   <section class="w-full max-w-5xl mx-auto px-4 pt-4 pb-2">
     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-red via-brand-orange to-brand-cheddar p-5 sm:p-7 text-white shadow-xl shadow-brand-orange/20">
       <div class="absolute -right-6 -bottom-8 text-7xl sm:text-8xl opacity-20 transform -rotate-12 pointer-events-none">🍔</div>
@@ -96,23 +95,23 @@
     </div>
   </section>
 
-  <!-- Navegación por Categorías (Pestañas móviles con scroll suave) -->
+  <!-- Navegación por Categorías -->
   <nav class="sticky top-[80px] z-30 bg-brand-cream/95 backdrop-blur-md py-2.5 border-b border-brand-orange/10" data-purpose="category-tabs">
     <div class="w-full max-w-5xl mx-auto px-4">
       <div class="flex space-x-2 overflow-x-auto no-scrollbar ios-scroll py-0.5" id="category-tabs-container">
-        <!-- Inyectado dinámicamente por JS -->
+        <!-- Inyectado por JS -->
       </div>
     </div>
   </nav>
 
-  <!-- Catálogo de Productos (Grid Adaptativo: 1 columna en Celular, 2 en Tablet, 3 en PC) -->
+  <!-- Catálogo de Productos -->
   <main class="w-full max-w-5xl mx-auto px-4 pt-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="products-catalog">
-      <!-- Inyectado dinámicamente desde Firebase -->
+      <!-- Inyectado dinámicamente -->
     </div>
   </main>
 
-  <!-- Botón Flotante Inferior para Móviles -->
+  <!-- Botón Flotante Inferior -->
   <aside class="fixed bottom-3 left-0 right-0 z-30 px-4 pointer-events-none transition-all duration-300 transform translate-y-20 opacity-0" id="floating-cart-bar">
     <div class="w-full max-w-md mx-auto pointer-events-auto">
       <button class="w-full bg-brand-red text-white px-5 py-3.5 rounded-2xl shadow-float flex items-center justify-between active:scale-[0.98] transition" id="float-cart-btn">
@@ -131,7 +130,7 @@
     </div>
   </aside>
 
-  <!-- Modal Personalizador (Modal responsivo en móvil y centrado en escritorio) -->
+  <!-- Modal Personalizador de Productos -->
   <div class="fixed inset-0 z-50 modal-backdrop hidden flex items-end sm:items-center justify-center p-0 sm:p-4" id="customize-modal">
     <div class="bg-white w-full max-w-lg rounded-t-[28px] sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
       
@@ -144,16 +143,24 @@
         <button class="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-bold hover:bg-gray-300 active:scale-95 transition" id="close-modal-btn">✕</button>
       </div>
 
-      <!-- Opciones del Producto -->
+      <!-- Opciones del Modal -->
       <div class="p-5 overflow-y-auto space-y-4 text-xs sm:text-sm ios-scroll flex-1">
         
-        <!-- Presentación -->
+        <!-- 1. Presentación -->
         <div class="space-y-1.5" id="modal-section-presentation">
           <label class="block text-[11px] font-bold text-gray-500 uppercase">1. Presentación</label>
           <div class="grid grid-cols-2 gap-2" id="presentation-options-container"></div>
         </div>
 
-        <!-- Proteína -->
+        <!-- 2. Elección de Bebida (Sincronizada dinámicamente con la categoría Bebidas) -->
+        <div class="space-y-1.5 hidden" id="modal-section-drink">
+          <label class="block text-[11px] font-bold text-gray-500 uppercase">Selecciona tu Bebida para el Combo</label>
+          <select id="modal-drink-select" class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red bg-white font-medium">
+            <!-- Se llena dinámicamente en app.js desde los productos de la categoría "bebidas" -->
+          </select>
+        </div>
+
+        <!-- 3. Proteína -->
         <div class="space-y-1.5" id="modal-section-protein">
           <label class="block text-[11px] font-bold text-gray-500 uppercase">2. Tipo de Proteína</label>
           <div class="grid grid-cols-2 gap-2">
@@ -168,7 +175,7 @@
           </div>
         </div>
 
-        <!-- Vegetales -->
+        <!-- 4. Vegetales -->
         <div class="space-y-1.5" id="modal-section-veggies">
           <label class="block text-[11px] font-bold text-gray-500 uppercase">3. Vegetales</label>
           <div class="grid grid-cols-3 gap-2">
@@ -187,7 +194,7 @@
           </div>
         </div>
 
-        <!-- Salsas -->
+        <!-- 5. Salsas -->
         <div class="space-y-1.5" id="modal-section-sauces">
           <div class="flex justify-between items-center">
             <label class="block text-[11px] font-bold text-gray-500 uppercase">4. Salsas de la Casa</label>
@@ -213,7 +220,7 @@
           </div>
         </div>
 
-        <!-- Adicionales -->
+        <!-- 6. Adicionales -->
         <div class="space-y-1.5" id="modal-section-addons">
           <label class="block text-[11px] font-bold text-gray-500 uppercase">5. Adicionales Extra</label>
           <div class="space-y-1.5">
@@ -234,7 +241,7 @@
           </div>
         </div>
 
-        <!-- Instrucciones -->
+        <!-- 7. Instrucciones -->
         <div class="space-y-1">
           <label class="block text-[11px] font-bold text-gray-500 uppercase">Instrucciones Especiales</label>
           <textarea class="w-full text-xs rounded-xl border border-gray-200 focus:border-brand-red focus:ring-brand-red p-2.5" id="modal-notes" placeholder="Ej: Sin cebolla, pan bien dorado..." rows="2"></textarea>
@@ -280,7 +287,7 @@
         </div>
         <div class="flex justify-between text-gray-600">
           <span>Servicio a Domicilio</span>
-          <span class="font-bold text-brand-dark" id="summary-delivery">$4.000</span>
+          <span class="font-bold text-brand-dark" id="summary-delivery">$0</span>
         </div>
         <div class="border-t border-brand-orange/20 pt-2 flex justify-between items-center text-sm font-black text-brand-red">
           <span>Total a Pagar</span>
@@ -288,35 +295,57 @@
         </div>
       </div>
 
-      <!-- Formulario Entrega -->
-      <div class="border-t border-gray-100 pt-4 space-y-3">
-        <h3 class="text-xs font-black uppercase tracking-wider text-brand-red">Datos para Entrega Inmediata</h3>
-        <div class="space-y-2.5 text-xs">
+      <!-- Formulario para Entrega -->
+      <div class="border-t border-gray-100 pt-3 space-y-2.5">
+        <h3 class="text-[11px] font-black uppercase tracking-wider text-brand-red">Datos para Entrega</h3>
+        
+        <div class="space-y-2 text-xs">
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Nombre y Apellido *</label>
-            <input class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-name" placeholder="Ej: Camilo Andrés Martínez" required type="text"/>
+            <label class="block font-bold text-gray-600 mb-0.5">Nombre y Apellido *</label>
+            <input class="w-full rounded-xl border border-gray-200 text-xs p-2 focus:border-brand-red focus:ring-brand-red" id="order-name" placeholder="Ej: Camilo Andrés Martínez" required type="text"/>
           </div>
+          
           <div>
-            <label class="block font-bold text-gray-600 mb-1">WhatsApp / Teléfono *</label>
-            <input class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-phone" placeholder="Ej: 3151234567" required type="tel"/>
+            <label class="block font-bold text-gray-600 mb-0.5">WhatsApp / Teléfono *</label>
+            <input class="w-full rounded-xl border border-gray-200 text-xs p-2 focus:border-brand-red focus:ring-brand-red" id="order-phone" placeholder="Ej: 3151234567" required type="tel"/>
           </div>
+
+          <!-- Selección de Ubicación de Entrega -->
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Dirección / Barrio *</label>
-            <input class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-address" placeholder="Ej: Calle 45 # 12-30" required type="text"/>
+            <label class="block font-bold text-gray-600 mb-1">Ubicación de Entrega *</label>
+            <div class="grid grid-cols-2 gap-2" id="delivery-location-options">
+              <label class="flex items-center gap-1.5 p-2 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/60 cursor-pointer">
+                <input type="radio" name="delivery-location" value="Reserva de Fontibón" checked class="text-brand-red focus:ring-brand-red">
+                <span class="font-bold text-[11px]">🏢 Reserva de Fontibón</span>
+              </label>
+              <label class="flex items-center gap-1.5 p-2 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/60 cursor-pointer">
+                <input type="radio" name="delivery-location" value="Otra dirección" class="text-brand-red focus:ring-brand-red">
+                <span class="font-bold text-[11px]">📍 Otra Dirección</span>
+              </label>
+            </div>
           </div>
-          <div class="grid grid-cols-2 gap-2">
+
+          <!-- Campos Dinámicos para Reserva de Fontibón -->
+          <div id="reserva-fields-container" class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block font-bold text-gray-600 mb-1">Torre / Bloque</label>
-              <input class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-tower" placeholder="Ej: Torre 4" type="text"/>
+              <label class="block font-bold text-gray-600 mb-0.5">Torre / Bloque *</label>
+              <input class="w-full rounded-xl border border-gray-200 text-xs p-2 focus:border-brand-red focus:ring-brand-red" id="order-tower" placeholder="Ej: Torre 4" type="text"/>
             </div>
             <div>
-              <label class="block font-bold text-gray-600 mb-1">Apto / Casa</label>
-              <input class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red" id="order-apartment" placeholder="Ej: Apto 502" type="text"/>
+              <label class="block font-bold text-gray-600 mb-0.5">Apto / Interior *</label>
+              <input class="w-full rounded-xl border border-gray-200 text-xs p-2 focus:border-brand-red focus:ring-brand-red" id="order-apartment" placeholder="Ej: Apto 502" type="text"/>
             </div>
           </div>
+
+          <!-- Campo Dinámico para Otra Dirección -->
+          <div id="other-address-container" class="hidden">
+            <label class="block font-bold text-gray-600 mb-0.5">Dirección Completa *</label>
+            <input class="w-full rounded-xl border border-gray-200 text-xs p-2 focus:border-brand-red focus:ring-brand-red" id="order-address" placeholder="Ej: Calle 45 # 12-30 Barrio..." type="text"/>
+          </div>
+
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Forma de Pago</label>
-            <select class="w-full rounded-xl border border-gray-200 text-xs p-2.5 focus:border-brand-red focus:ring-brand-red bg-white font-medium" id="order-payment">
+            <label class="block font-bold text-gray-600 mb-0.5">Forma de Pago</label>
+            <select class="w-full rounded-xl border border-gray-200 text-xs p-2 focus:border-brand-red focus:ring-brand-red bg-white font-medium" id="order-payment">
               <option value="Efectivo contraentrega">💵 Efectivo al recibir</option>
               <option value="Transferencia Nequi">🟣 Nequi</option>
               <option value="Transferencia Daviplata">🔴 Daviplata</option>
