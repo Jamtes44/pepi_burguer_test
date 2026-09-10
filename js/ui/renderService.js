@@ -6,9 +6,6 @@ function formatCOP(amount) {
   return '$' + (amount || 0).toLocaleString('es-CO');
 }
 
-/**
- * Renderiza las pestañas superiores de navegación por categorías
- */
 export function renderCategories() {
   const navContainer = document.querySelector('nav[data-purpose="category-tabs"] > div');
   if (!navContainer) return;
@@ -45,16 +42,12 @@ export function renderCategories() {
   });
 }
 
-/**
- * Renderiza las tarjetas dinámicas del catálogo de productos en el DOM
- */
 export function renderProducts(productsList = []) {
   const catalog = document.getElementById('products-catalog');
   if (!catalog) return;
 
   window.latestProductsList = productsList;
 
-  // Filtrar solo productos activos (isAvailable !== false)
   const availableProducts = productsList.filter(p => p.isAvailable !== false);
 
   const items = activeCategory === 'all' 
@@ -76,12 +69,10 @@ export function renderProducts(productsList = []) {
     const card = document.createElement('article');
     card.className = "bg-white rounded-3xl p-4 shadow-soft border border-gray-100/80 flex flex-col justify-between transition hover:border-brand-orange/30 overflow-hidden";
 
-    // Insignias (Badge)
     const badgeHtml = product.badge 
       ? `<span class="bg-amber-100 text-amber-900 border border-amber-300/60 font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full">${product.badge}</span>` 
       : '';
 
-    // Imagen del producto (con fallback en caso de error o ausencia)
     const imageUrl = product.image && product.image.trim() !== '' 
       ? product.image 
       : 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=1000';
@@ -97,12 +88,14 @@ export function renderProducts(productsList = []) {
       </div>
     `;
 
-    // Formato de precios (Solo vs Combo)
+    const categoryLower = (product.category || '').toLowerCase();
+    const isDirectAdd = categoryLower === 'adicionales' || categoryLower === 'bebidas';
+
     let priceHtml = '';
     const priceSoloNum = parseInt(product.priceSolo, 10) || 0;
     const priceComboNum = product.priceCombo ? parseInt(product.priceCombo, 10) : null;
 
-    if (priceComboNum) {
+    if (priceComboNum && !isDirectAdd) {
       priceHtml = `
         <div>
           <span class="text-xs text-gray-500 font-medium block">Sola: <b class="text-brand-dark">${formatCOP(priceSoloNum)}</b></span>
@@ -117,6 +110,8 @@ export function renderProducts(productsList = []) {
       `;
     }
 
+    const buttonLabel = isDirectAdd ? 'Agregar +' : 'Personalizar +';
+
     card.innerHTML = `
       <div>
         ${imageHtml}
@@ -129,8 +124,7 @@ export function renderProducts(productsList = []) {
       <div class="pt-3 border-t border-gray-50 flex items-center justify-between gap-2">
         ${priceHtml}
         <button type="button" data-id="${product.id}" class="btn-open-customizer px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-red to-brand-orange text-white text-xs font-black tracking-wide shadow-sm active:scale-95 transition flex items-center gap-1">
-          <span>Personalizar</span>
-          <span>+</span>
+          <span>${buttonLabel}</span>
         </button>
       </div>
     `;
@@ -138,7 +132,6 @@ export function renderProducts(productsList = []) {
     catalog.appendChild(card);
   });
 
-  // Vincular eventos dinámicos para abrir el modal personalizador
   catalog.querySelectorAll('.btn-open-customizer').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const prodId = e.currentTarget.dataset.id;
@@ -147,34 +140,47 @@ export function renderProducts(productsList = []) {
   });
 }
 
-/**
- * Renderiza el estado del carrito, badges superiores, resumen de totales y lista desplegable
- */
 export function renderCartDrawer() {
   const cart = getCart();
-  const { subtotal, deliveryFee, total } = getCartTotals();
+  const { subtotal } = getCartTotals();
 
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Elementos contadores y totales superiores / flotantes
+  const selectedLocationInput = document.querySelector('input[name="delivery-location"]:checked');
+  const selectedLocation = selectedLocationInput ? selectedLocationInput.value : 'Reserva de Fontibón';
+  const isFreeDelivery = selectedLocation === 'Reserva de Fontibón';
+
   const badgeCount = document.getElementById('cart-badge-count');
   const floatCount = document.getElementById('float-cart-count');
   const floatTotal = document.getElementById('float-cart-total');
 
   if (badgeCount) badgeCount.textContent = totalCount;
   if (floatCount) floatCount.textContent = totalCount;
-  if (floatTotal) floatTotal.textContent = formatCOP(total);
+  if (floatTotal) floatTotal.textContent = formatCOP(subtotal);
 
-  // Resumen del Drawer
   const summarySubtotal = document.getElementById('summary-subtotal');
   const summaryDelivery = document.getElementById('summary-delivery');
   const summaryTotal = document.getElementById('summary-total');
 
   if (summarySubtotal) summarySubtotal.textContent = formatCOP(subtotal);
-  if (summaryDelivery) summaryDelivery.textContent = totalCount > 0 ? formatCOP(deliveryFee) : '$0';
-  if (summaryTotal) summaryTotal.textContent = formatCOP(total);
 
-  // Barra flotante inferior
+  if (summaryDelivery) {
+    if (totalCount === 0) {
+      summaryDelivery.textContent = '$0';
+      summaryDelivery.className = "font-bold text-brand-dark";
+    } else if (isFreeDelivery) {
+      summaryDelivery.textContent = '¡GRATIS!';
+      summaryDelivery.className = "font-black text-emerald-600";
+    } else {
+      summaryDelivery.textContent = 'A calcular';
+      summaryDelivery.className = "font-bold text-amber-600";
+    }
+  }
+
+  if (summaryTotal) {
+    summaryTotal.textContent = formatCOP(subtotal);
+  }
+
   const floatBar = document.getElementById('floating-cart-bar');
   if (floatBar) {
     if (totalCount > 0) {
@@ -185,7 +191,6 @@ export function renderCartDrawer() {
     }
   }
 
-  // Contenedor interno de ítems
   const container = document.getElementById('cart-items-container');
   if (!container) return;
 
@@ -199,10 +204,8 @@ export function renderCartDrawer() {
     const itemEl = document.createElement('div');
     itemEl.className = "bg-brand-cream/60 border border-brand-orange/15 rounded-2xl p-3 flex flex-col gap-2";
 
-    // Unificación de precio unitario seguro
     const unitPrice = parseInt(item.unitPrice || item.price || 0, 10);
 
-    // Detalles adicionales
     let metaDetails = [];
     if (item.presentation) metaDetails.push(`Pres: ${item.presentation}`);
     if (item.protein) metaDetails.push(`Prot: ${item.protein}`);
@@ -236,7 +239,6 @@ export function renderCartDrawer() {
     container.appendChild(itemEl);
   });
 
-  // Vincular eventos de modificación con cartItemId
   container.querySelectorAll('.btn-qty-minus').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const cartItemId = e.currentTarget.dataset.cartId;
