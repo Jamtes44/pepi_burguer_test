@@ -1,7 +1,7 @@
 import { getCart, getCartTotals } from './cartService.js';
 import { formatCurrency } from '../utils/formatters.js';
 
-const WHATSAPP_PHONE = '57315334045';
+const WHATSAPP_PHONE = '3025277150';
 
 /**
  * Recopila los datos del formulario, procesa la lista del carrito y abre WhatsApp.
