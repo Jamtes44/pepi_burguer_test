@@ -2,26 +2,24 @@ import { renderCategories, renderProducts, renderCartDrawer } from './ui/renderS
 import { subscribeToProducts, subscribeToStoreStatus } from './services/firebaseService.js';
 import { getCart, getCartTotals, addToCart } from './services/cartService.js';
 
-// Variable en memoria para rastrear el producto actualmente abierto en el modal
+const PEPI_PHONE_NUMBER = "3153340450"; 
+
 let currentProduct = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Renderizar la interfaz inicial
   renderCategories();
   renderCartDrawer();
 
-  // 2. Conexión en vivo con Firestore: productos
   subscribeToProducts((products) => {
-    window.latestProductsList = products; // Guardar referencia global
+    window.latestProductsList = products;
     renderProducts(products);
   });
 
-  // 3. Conexión en vivo con Firestore: estado operativo de la tienda
   subscribeToStoreStatus((isOpen) => {
     updateClientStoreStatusUI(isOpen);
   });
 
-  // 4. Controles del Carrito Desplegable (Drawer)
+  // Controles del Drawer
   const cartDrawer = document.getElementById('cart-drawer');
   const cartBackdrop = document.getElementById('cart-drawer-backdrop');
   const openCartBtn = document.getElementById('open-cart-btn');
@@ -43,13 +41,41 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeCartBtn) closeCartBtn.addEventListener('click', () => toggleCart(false));
   if (cartBackdrop) cartBackdrop.addEventListener('click', () => toggleCart(false));
 
-  // 5. Método global para abrir el Modal Personalizador desde cada producto
+  // Control de Ubicación de Domicilio
+  const locationRadios = document.querySelectorAll('input[name="delivery-location"]');
+  locationRadios.forEach(radio => {
+    radio.addEventListener('change', handleDeliveryLocationChange);
+  });
+
+  // Método global para abrir el Modal Personalizador
   window.openCustomizer = (productId) => {
     const product = (window.latestProductsList || []).find(p => p.id === productId);
     if (!product) return;
 
-    currentProduct = product; // Guardar el producto en contexto
+    currentProduct = product;
+    const categoryLower = (product.category || '').toLowerCase();
 
+    // Adicionales y Bebidas se agregan DIRECTAMENTE sin modal
+    if (categoryLower === 'adicionales' || categoryLower === 'bebidas') {
+      const directItem = {
+        id: product.id,
+        name: product.name,
+        unitPrice: parseInt(product.priceSolo, 10) || 0,
+        isCombo: false,
+        presentation: 'Solo / Individual',
+        protein: null,
+        selectedVeggies: [],
+        selectedSauces: [],
+        selectedAdditionals: [],
+        notes: '',
+        image: product.image
+      };
+      addToCart(directItem);
+      toggleCart(true); // Abrir canasta tras agregar
+      return;
+    }
+
+    // Para Hamburguesas, Perros, Salchipapas, Burritos -> Abrir Modal
     document.getElementById('modal-product-category').textContent = product.category || 'Categoría';
     document.getElementById('modal-product-name').textContent = product.name;
     document.getElementById('modal-notes').value = '';
@@ -60,6 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (product.priceCombo) {
       presSection?.classList.remove('hidden');
       if (presContainer) {
+        // Texto específico según la categoría (Ej: Salchipapas sólo +Bebida)
+        const comboText = categoryLower === 'salchipapas' 
+          ? '🍟 En Combo (+Bebida)' 
+          : '🍟 En Combo (+Papas +Bebida)';
+
         presContainer.innerHTML = `
           <label class="flex flex-col p-2.5 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/50 cursor-pointer">
             <div class="flex items-center gap-1.5 mb-1">
@@ -72,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <label class="flex flex-col p-2.5 rounded-xl border border-gray-200 bg-white has-[:checked]:border-brand-red has-[:checked]:bg-red-50/50 cursor-pointer">
             <div class="flex items-center gap-1.5 mb-1">
               <input type="radio" name="modal-presentation" value="Combo" class="text-brand-red focus:ring-brand-red">
-              <span class="font-black text-xs">🍟 En Combo (+Papas +Bebida)</span>
+              <span class="font-black text-xs">${comboText}</span>
             </div>
             <span class="text-xs text-brand-dark font-black pl-5">$${parseInt(product.priceCombo, 10).toLocaleString('es-CO')}</span>
           </label>
@@ -82,24 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
       presSection?.classList.add('hidden');
     }
 
-    // Actualizar precio en pantalla inicial del modal
+    updateModalOptionsVisibility();
     updateModalPriceDisplay();
 
-    // Escuchar cambios en la presentación o adicionales para recalcular el precio en tiempo real
     document.querySelectorAll('input[name="modal-presentation"], input[name="modal-addons"]').forEach(element => {
-      element.addEventListener('change', updateModalPriceDisplay);
+      element.addEventListener('change', () => {
+        updateModalOptionsVisibility();
+        updateModalPriceDisplay();
+      });
     });
 
     document.getElementById('customize-modal')?.classList.remove('hidden');
   };
 
-  // 6. Confirmar y agregar el producto al carrito
   const confirmAddBtn = document.getElementById('confirm-add-cart-btn');
   if (confirmAddBtn) {
     confirmAddBtn.addEventListener('click', handleConfirmAddToCart);
   }
 
-  // 7. Cerrar Modal Personalizador
   const closeModalBtn = document.getElementById('close-modal-btn');
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', () => {
@@ -107,13 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 8. Envío del Pedido Estructurado hacia WhatsApp
   const sendWhatsappBtn = document.getElementById('send-whatsapp-btn');
   if (sendWhatsappBtn) {
     sendWhatsappBtn.addEventListener('click', submitOrderViaWhatsApp);
   }
 
-  // Tecla Escape para cerrar modales
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       toggleCart(false);
@@ -123,8 +152,56 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Recalcula el precio mostrado en el modal según la presentación y los adicionales seleccionados
+ * Llena el selector de bebidas en el combo directamente con los productos de la categoría Bebidas
  */
+function updateModalOptionsVisibility() {
+  if (!currentProduct) return;
+
+  const selectedPresentation = document.querySelector('input[name="modal-presentation"]:checked')?.value || 'Solo';
+  const isCombo = selectedPresentation === 'Combo';
+
+  const drinkSection = document.getElementById('modal-section-drink');
+  const drinkSelect = document.getElementById('modal-drink-select');
+
+  if (isCombo && drinkSection && drinkSelect) {
+    drinkSection.classList.remove('hidden');
+
+    // Cargar bebidas dinámicamente desde el inventario de la tienda
+    const availableDrinks = (window.latestProductsList || [])
+      .filter(p => (p.category || '').toLowerCase() === 'bebidas' && p.isAvailable !== false);
+
+    if (availableDrinks.length > 0) {
+      drinkSelect.innerHTML = availableDrinks.map(drink => `
+        <option value="${drink.name}">🥤 ${drink.name}</option>
+      `).join('');
+    } else {
+      drinkSelect.innerHTML = `
+        <option value="Gaseosa Personal">🥤 Gaseosa Personal</option>
+        <option value="Jugo Hit">🧃 Jugo Hit</option>
+        <option value="Agua Mineral">💧 Agua Mineral</option>
+      `;
+    }
+  } else if (drinkSection) {
+    drinkSection.classList.add('hidden');
+  }
+}
+
+function handleDeliveryLocationChange() {
+  const selectedLocation = document.querySelector('input[name="delivery-location"]:checked')?.value;
+  const reservaContainer = document.getElementById('reserva-fields-container');
+  const otherContainer = document.getElementById('other-address-container');
+
+  if (selectedLocation === 'Reserva de Fontibón') {
+    reservaContainer?.classList.remove('hidden');
+    otherContainer?.classList.add('hidden');
+  } else {
+    reservaContainer?.classList.add('hidden');
+    otherContainer?.classList.remove('hidden');
+  }
+
+  renderCartDrawer();
+}
+
 function updateModalPriceDisplay() {
   if (!currentProduct) return;
 
@@ -147,12 +224,10 @@ function updateModalPriceDisplay() {
   }
 }
 
-/**
- * Captura las opciones del modal e inserta el ítem en el cartService
- */
 function handleConfirmAddToCart() {
   if (!currentProduct) return;
 
+  const categoryLower = (currentProduct.category || '').toLowerCase();
   const selectedPresentation = document.querySelector('input[name="modal-presentation"]:checked')?.value || 'Solo';
   const isCombo = selectedPresentation === 'Combo';
   
@@ -160,18 +235,14 @@ function handleConfirmAddToCart() {
     ? parseInt(currentProduct.priceCombo, 10) 
     : parseInt(currentProduct.priceSolo, 10);
 
-  // Proteína
   const selectedProtein = document.querySelector('input[name="modal-protein"]:checked')?.value || 'Carne Res';
 
-  // Vegetales
   const selectedVeggies = Array.from(document.querySelectorAll('input[name="modal-veggies"]:checked'))
     .map(chk => chk.value);
 
-  // Salsas
   const selectedSauces = Array.from(document.querySelectorAll('input[name="modal-sauces"]:checked'))
     .map(chk => chk.value);
 
-  // Adicionales
   let extraCost = 0;
   const selectedAdditionals = Array.from(document.querySelectorAll('input[name="modal-addons"]:checked'))
     .map(chk => {
@@ -179,18 +250,25 @@ function handleConfirmAddToCart() {
       return chk.value;
     });
 
-  // Notas opcionales
-  const notes = document.getElementById('modal-notes')?.value.trim() || '';
+  const drinkSelect = document.getElementById('modal-drink-select');
+  const selectedDrink = isCombo && drinkSelect ? drinkSelect.value : null;
 
+  const notes = document.getElementById('modal-notes')?.value.trim() || '';
   const unitPrice = basePrice + extraCost;
 
-  // Construcción del objeto para cartService
+  let presentationLabel = 'Solo / Individual';
+  if (isCombo) {
+    presentationLabel = categoryLower === 'salchipapas' 
+      ? `Combo (+${selectedDrink || 'Bebida'})` 
+      : `Combo (+Papas +${selectedDrink || 'Bebida'})`;
+  }
+
   const itemToAdd = {
     id: currentProduct.id,
     name: currentProduct.name,
     unitPrice: unitPrice,
     isCombo: isCombo,
-    presentation: isCombo ? 'Combo (+Papas +Bebida)' : 'Solo / Individual',
+    presentation: presentationLabel,
     protein: selectedProtein,
     selectedVeggies: selectedVeggies,
     selectedSauces: selectedSauces,
@@ -199,16 +277,10 @@ function handleConfirmAddToCart() {
     image: currentProduct.image
   };
 
-  // Agregar al carrito mediante el servicio
   addToCart(itemToAdd);
-
-  // Cerrar el modal
   document.getElementById('customize-modal')?.classList.add('hidden');
 }
 
-/**
- * Actualiza la vista de disponibilidad en la cabecera y el carrito del cliente en tiempo real
- */
 function updateClientStoreStatusUI(isOpen) {
   const statusContainer = document.getElementById('store-status-pill');
   const sendOrderBtn = document.getElementById('send-whatsapp-btn');
@@ -248,9 +320,6 @@ function updateClientStoreStatusUI(isOpen) {
   }
 }
 
-/**
- * Procesa la orden y genera el mensaje de WhatsApp
- */
 function submitOrderViaWhatsApp() {
   const cart = getCart();
   if (cart.length === 0) {
@@ -260,24 +329,41 @@ function submitOrderViaWhatsApp() {
 
   const name = document.getElementById('order-name')?.value.trim();
   const phone = document.getElementById('order-phone')?.value.trim();
-  const address = document.getElementById('order-address')?.value.trim();
-  const tower = document.getElementById('order-tower')?.value.trim();
-  const apartment = document.getElementById('order-apartment')?.value.trim();
   const payment = document.getElementById('order-payment')?.value;
+  const selectedLocation = document.querySelector('input[name="delivery-location"]:checked')?.value;
 
-  if (!name || !phone || !address) {
-    alert("Por favor completa los campos obligatorios: Nombre, Teléfono y Dirección.");
+  if (!name || !phone) {
+    alert("Por favor ingresa tu Nombre y Teléfono.");
     return;
   }
 
-  const { subtotal, deliveryFee, total } = getCartTotals();
+  let locationText = '';
+  let isFreeDelivery = selectedLocation === 'Reserva de Fontibón';
+
+  if (isFreeDelivery) {
+    const tower = document.getElementById('order-tower')?.value.trim();
+    const apartment = document.getElementById('order-apartment')?.value.trim();
+
+    if (!tower || !apartment) {
+      alert("Por favor ingresa tu Torre y Apartamento para la entrega en Reserva de Fontibón.");
+      return;
+    }
+    locationText = `🏢 *Conjunto:* Reserva de Fontibón\n🏢 *Torre:* ${tower}\n🚪 *Apto/Interior:* ${apartment}`;
+  } else {
+    const address = document.getElementById('order-address')?.value.trim();
+    if (!address) {
+      alert("Por favor ingresa tu Dirección completa.");
+      return;
+    }
+    locationText = `📍 *Dirección:* ${address}`;
+  }
+
+  const { subtotal } = getCartTotals();
 
   let msg = `¡Hola *Pepi Burguer*! 👋 Quiero confirmar este pedido con Sabor Premium:\n\n`;
   msg += `👤 *Cliente:* ${name}\n`;
   msg += `📞 *Tel:* ${phone}\n`;
-  msg += `📍 *Dirección:* ${address}\n`;
-  if (tower) msg += `🏢 *Torre:* ${tower}\n`;
-  if (apartment) msg += `🚪 *Apto/Interior:* ${apartment}\n`;
+  msg += `${locationText}\n`;
   msg += `💳 *Método de Pago:* ${payment}\n\n`;
 
   msg += `🛒 *DETALLE DEL PEDIDO:*\n`;
@@ -292,11 +378,14 @@ function submitOrderViaWhatsApp() {
 
   msg += `\n-----------------------------\n`;
   msg += `🧾 *Subtotal:* $${subtotal.toLocaleString('es-CO')}\n`;
-  msg += `🛵 *Domicilio:* $${deliveryFee.toLocaleString('es-CO')}\n`;
-  msg += `💰 *TOTAL A PAGAR:* $${total.toLocaleString('es-CO')}\n`;
+  msg += `🛵 *Domicilio:* ${isFreeDelivery ? '¡GRATIS! (Reserva de Fontibón)' : 'A calcular'}\n`;
+  msg += `💰 *TOTAL PRODUCTOS:* $${subtotal.toLocaleString('es-CO')} ${!isFreeDelivery ? '(+ valor domicilio)' : ''}\n`;
   msg += `-----------------------------\n`;
-  msg += `¿Me confirman el tiempo estimado de entrega por favor? ¡Muchas gracias! 🙌`;
+  msg += `¿Me confirman el costo final y el tiempo estimado de entrega por favor? ¡Muchas gracias! 🙌`;
 
-  const waUrl = `https://wa.me/57315334045?text=${encodeURIComponent(msg)}`;
+  const cleanNumber = PEPI_PHONE_NUMBER.replace(/\D/g, '');
+  const formattedPhone = cleanNumber.startsWith('57') ? cleanNumber : `57${cleanNumber}`;
+
+  const waUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, '_blank');
 }
