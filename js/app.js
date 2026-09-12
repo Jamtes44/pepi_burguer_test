@@ -2,7 +2,7 @@ import { renderCategories, renderProducts, renderCartDrawer } from './ui/renderS
 import { subscribeToProducts, subscribeToStoreStatus } from './services/firebaseService.js';
 import { getCart, getCartTotals, addToCart } from './services/cartService.js';
 
-const PEPI_PHONE_NUMBER = "3153340450"; 
+const PEPI_PHONE_NUMBER = "3153344050"; 
 
 let currentProduct = null;
 
