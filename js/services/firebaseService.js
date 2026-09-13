@@ -3,6 +3,7 @@ import {
   getFirestore, 
   collection, 
   doc,
+  addDoc,
   setDoc,
   onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -18,6 +19,31 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+
+/**
+ * Retorna la fecha local actual en formato 'YYYY-MM-DD'
+ */
+export function getTodayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Registra un pedido entrante en Firestore asociándolo a la fecha del día
+ */
+export async function addNewOrder(orderData) {
+  const todayStr = getTodayDateString();
+  const orderWithDate = {
+    ...orderData,
+    dateStr: todayStr,
+    createdAt: new Date().toISOString()
+  };
+  const docRef = await addDoc(collection(db, "orders"), orderWithDate);
+  return docRef.id;
+}
 
 /**
  * Escucha en tiempo real la lista de productos del menú

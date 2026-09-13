@@ -1,5 +1,5 @@
 import { renderCategories, renderProducts, renderCartDrawer } from './ui/renderService.js';
-import { subscribeToProducts, subscribeToStoreStatus } from './services/firebaseService.js';
+import { subscribeToProducts, subscribeToStoreStatus, addNewOrder } from './services/firebaseService.js';
 import { getCart, getCartTotals, addToCart } from './services/cartService.js';
 
 const PEPI_PHONE_NUMBER = "3153344045"; 
@@ -320,7 +320,7 @@ function updateClientStoreStatusUI(isOpen) {
   }
 }
 
-function submitOrderViaWhatsApp() {
+async function submitOrderViaWhatsApp() {
   const cart = getCart();
   if (cart.length === 0) {
     alert("Por favor selecciona algún producto antes de confirmar tu pedido.");
@@ -359,6 +359,25 @@ function submitOrderViaWhatsApp() {
   }
 
   const { subtotal } = getCartTotals();
+
+  // Construir objeto de orden para Firestore
+  const orderData = {
+    customerName: name,
+    customerPhone: phone,
+    deliveryLocation: locationText,
+    paymentMethod: payment,
+    items: cart,
+    subtotal: subtotal,
+    totalAmount: subtotal,
+    status: 'Pendiente'
+  };
+
+  try {
+    // Guardar comanda en Firebase en tiempo real
+    await addNewOrder(orderData);
+  } catch (error) {
+    console.error("Error al registrar el pedido en la base de datos:", error);
+  }
 
   let msg = `¡Hola *Pepi Burguer*! 👋 Quiero confirmar este pedido con Sabor Premium:\n\n`;
   msg += `👤 *Cliente:* ${name}\n`;
